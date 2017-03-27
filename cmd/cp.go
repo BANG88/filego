@@ -23,8 +23,18 @@ package cmd
 import (
 	"fmt"
 
+	"os"
+
+	"io/ioutil"
+
+	"path/filepath"
+
+	"github.com/bmatcuk/doublestar"
 	"github.com/spf13/cobra"
 )
+
+var destination string
+var pattern string
 
 // cpCmd represents the cp command
 var cpCmd = &cobra.Command{
@@ -37,8 +47,46 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("cp called")
+		a, _ := doublestar.Glob(pattern)
+		for _, f := range a {
+			fi, err := os.Stat(f)
+			d := fmt.Sprintf("%s/%s", destination, f)
+			if err != nil {
+				return
+			}
+			log("%s will be cp to: %s", f, d)
+			switch mode := fi.Mode(); {
+			case mode.IsDir():
+				os.MkdirAll(d, fi.Mode())
+			case mode.IsRegular():
+
+				op := filepath.Dir(f)
+				ops, err := os.Stat(op)
+				if err != nil {
+					log("check dir [%s] failure", op)
+					return
+				}
+				// mkdir
+				p := filepath.Dir(d)
+				err = os.MkdirAll(p, ops.Mode())
+				if err != nil {
+					log("mkdir %s", p)
+					return
+				}
+				fi, err := ioutil.ReadFile(f)
+				if err != nil {
+					log("Error", err)
+					return
+				}
+				df, err := os.Create(d)
+				_, err = df.Write(fi)
+				if err != nil {
+					log("cp file %s failure", d)
+				}
+				log("%s", f)
+			}
+
+		}
 	},
 }
 
@@ -54,5 +102,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// cpCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	cpCmd.Flags().StringVarP(&destination, "destination", "d", "", "filesystem path to copy files to")
+	cpCmd.Flags().StringVarP(&pattern, "pattern", "p", "", "glob pattern for cp")
 }
