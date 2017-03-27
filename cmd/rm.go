@@ -21,10 +21,12 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var input string
 
 // rmCmd represents the rm command
 var rmCmd = &cobra.Command{
@@ -38,7 +40,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO: Work your own magic here
-		fmt.Println("rm called")
+		os.RemoveAll(input)
 	},
 }
 
@@ -54,5 +56,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// rmCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	rmCmd.Flags().StringVarP(&input, "destination", "d", "", "rm files")
 }
